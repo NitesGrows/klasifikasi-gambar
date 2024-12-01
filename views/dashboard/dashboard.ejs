@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klasifikasi Gambar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles" />
+</head>
+
+<body>
+    <div class="main-container">
+        <section class="hero" id="home">
+            <main class="content">
+                <h1>SILAHKAN INPUT GAMBAR</h1>
+                <div class="input-container">
+                    <div class="input-box">
+                        <label for="file-input">+</label>
+                        <input type="file" id="file-input" />
+                    </div>
+                    <div class="buttons">
+                        <button id="uploadBtn" class="btn">Upload</button>
+                        <button id="classifyBtn" class="btn">Klasifikasi</button>
+                        <button id="resetBtn" class="btn">Reset</button>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <aside class="output">
+            <h2>Hasil Klasifikasi</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Label</th>
+                        <td id="label">-</td>
+                    </tr>
+                    <tr>
+                        <th>Presentase</th>
+                        <td id="confidence">-</td>
+                    </tr>
+                    <tr>
+                        <th>Deskripsi</th>
+                        <td id="description">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+    </div>
+
+    <script src="/scripts"></script>
+    <script>
+        let uploadedFilePath = "";
+
+        document.getElementById('uploadBtn').addEventListener('click', function() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) {
+                alert('Please select an image to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Upload successful!');
+                    uploadedFilePath = data.filePath; // Assuming backend returns file path.
+                } else {
+                    alert('Upload failed: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('classifyBtn').addEventListener('click', function() {
+            if (!uploadedFilePath) {
+                alert('Please upload an image first.');
+                return;
+            }
+
+            fetch('/classify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filePath: uploadedFilePath })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('label').textContent = data.label;
+                    document.getElementById('confidence').textContent = data.confidence;
+                    document.getElementById('description').textContent = data.description;
+                } else {
+                    alert('Classification failed: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('file-input').value = "";
+            document.getElementById('label').textContent = "-";
+            document.getElementById('confidence').textContent = "-";
+            document.getElementById('description').textContent = "-";
+            uploadedFilePath = "";
+        });
+    </script>
+</body>
+
+</html>
